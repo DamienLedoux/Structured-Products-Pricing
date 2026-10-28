@@ -30,6 +30,16 @@ def bs_put (S, K, T, r, sigma, q = 0.0) :
 
     return (put_price)
 
+def bs_delta_call(S, K, T, r, sigma, q = 0.0) :
+    d1, d2 = _d1_d2(S, K, T, r, sigma, q)
+    delta_call = np.exp(-q*T)*norm.cdf(d1)
+    return (delta_call)
+
+def bs_delta_put(S, K, T, r, sigma, q = 0.0) :
+    d1, d2 = _d1_d2(S, K, T, r, sigma, q)
+    delta_put = -np.exp(-q*T) * norm.cdf(-d1)
+    return (delta_put)
+
 
 if __name__ == "__main__":
     print(bs_put(S=100, K=100, T=1, r=0.05, sigma=0.2))
