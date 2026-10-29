@@ -1,5 +1,5 @@
 import pytest
-from black_scholes import bs_call, bs_put, bs_delta_call, bs_delta_put
+from black_scholes import bs_call, bs_put, bs_delta_call, bs_delta_put, bs_gamma, bs_vega
 import numpy as np
 
 PARAMS = [
@@ -42,3 +42,21 @@ def test_delta_put (S, K, T, r, sigma, q) :
     numerical_delta = (p_up - p_down) / (2 * h)
 
     assert bs_delta_put (S, K, T, r, sigma, q) == pytest.approx(numerical_delta, abs=1e-5)
+
+@pytest.mark.parametrize("S, K, T, r, sigma, q",PARAMS)
+def test_gamma (S, K, T, r, sigma, q) :
+    h = 0.01
+    gamma_up = bs_delta_call(S + h, K, T, r, sigma, q)
+    gamma_down = bs_delta_call(S - h, K, T, r, sigma, q)
+    numerical_gamma = (gamma_up - gamma_down) / (2 * h)
+
+    assert bs_gamma (S, K, T, r, sigma, q) == pytest.approx(numerical_gamma, abs=1e-5)
+
+@pytest.mark.parametrize("S, K, T, r, sigma, q",PARAMS)
+def test_vega (S, K, T, r, sigma, q) :
+    h = 1e-4
+    c_up = bs_call(S, K, T, r, sigma + h, q)
+    c_down = bs_call(S, K, T, r, sigma - h, q)
+    numerical_vega = (c_up - c_down) / (2 * h)
+
+    assert bs_vega (S, K, T, r, sigma, q) == pytest.approx(numerical_vega, abs=1e-5)
