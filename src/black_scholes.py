@@ -53,5 +53,15 @@ def bs_vega (S, K, T, r, sigma, q=0.0) :
     vega = S*np.exp(-q*T)*norm.pdf(d1)*np.sqrt(T)
     return(vega)
 
+def bs_rho_call (S, K, T, r, sigma, q=0.0) :
+    d1, d2 = _d1_d2(S, K, T, r, sigma, q)
+    rho_call = K*T*np.exp(-r*T)*norm.cdf(d2)
+    return(rho_call)
+
+def bs_rho_put (S, K, T, r, sigma, q=0.0) :
+    d1, d2 = _d1_d2(S, K, T, r, sigma, q)
+    rho_put = -K*T*np.exp(-r*T)*norm.cdf(-d2)
+    return (rho_put)
+
 if __name__ == "__main__":
     print(bs_put(S=100, K=100, T=1, r=0.05, sigma=0.2))

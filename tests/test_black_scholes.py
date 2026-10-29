@@ -1,5 +1,5 @@
 import pytest
-from black_scholes import bs_call, bs_put, bs_delta_call, bs_delta_put, bs_gamma, bs_vega
+from black_scholes import bs_call, bs_put, bs_delta_call, bs_delta_put, bs_gamma, bs_vega, bs_rho_call, bs_rho_put
 import numpy as np
 
 PARAMS = [
@@ -60,3 +60,21 @@ def test_vega (S, K, T, r, sigma, q) :
     numerical_vega = (c_up - c_down) / (2 * h)
 
     assert bs_vega (S, K, T, r, sigma, q) == pytest.approx(numerical_vega, abs=1e-5)
+
+@pytest.mark.parametrize("S, K, T, r, sigma, q",PARAMS)
+def test_rho_call (S, K, T, r, sigma, q) :
+    h = 1e-4
+    r_up = bs_call(S, K, T, r+h, sigma, q)
+    r_down = bs_call(S, K, T, r-h, sigma, q)
+    numerical_rho = (r_up - r_down) / (2 * h)
+
+    assert bs_rho_call (S, K, T, r, sigma, q) == pytest.approx(numerical_rho, rel=1e-6)
+
+@pytest.mark.parametrize("S, K, T, r, sigma, q",PARAMS)
+def test_rho_put (S, K, T, r, sigma, q) :
+    h = 1e-4
+    r_up = bs_put(S, K, T, r+h, sigma, q)
+    r_down = bs_put(S, K, T, r-h, sigma, q)
+    numerical_rho = (r_up - r_down) / (2 * h)
+
+    assert bs_rho_put (S, K, T, r, sigma, q) == pytest.approx(numerical_rho, rel=1e-6)
