@@ -63,5 +63,15 @@ def bs_rho_put (S, K, T, r, sigma, q=0.0) :
     rho_put = -K*T*np.exp(-r*T)*norm.cdf(-d2)
     return (rho_put)
 
+def bs_theta_call (S, K, T, r, sigma, q=0.0) :
+    d1, d2 = _d1_d2(S, K, T, r, sigma, q)
+    theta_call = (-S*np.exp(-q*T)*norm.pdf(d1))*sigma/(2*np.sqrt(T)) - r*K*np.exp(-r*T)*norm.cdf(d2) + q*S*np.exp(-q*T)*norm.cdf(d1)
+    return (theta_call)
+
+def bs_theta_put (S, K, T, r, sigma, q=0.0) :
+    d1, d2 = _d1_d2(S, K, T, r, sigma, q)
+    theta_put = (-S*np.exp(-q*T)*norm.pdf(d1))*sigma/(2*np.sqrt(T)) + r*K*np.exp(-r*T)*norm.cdf(-d2) - q*S*np.exp(-q*T)*norm.cdf(-d1)
+    return (theta_put)
+
 if __name__ == "__main__":
     print(bs_put(S=100, K=100, T=1, r=0.05, sigma=0.2))
