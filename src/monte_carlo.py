@@ -15,6 +15,7 @@ def mc_european(S, K, T, r, sigma, q=0.0, option_type="call", n_paths=100_000, s
     # Step 2 : final Price of each variables
     S_T = S*np.exp((r-q-sigma**2/2)*T + sigma*np.sqrt(T)*z)
 
+
     # Step 3 : le payoff dépend du type
     if option_type == "call":
         payoff = np.maximum(S_T - K, 0)
