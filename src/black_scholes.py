@@ -34,32 +34,32 @@ def bs_put (S, K, T, r, sigma, q=0.0) :
     return (put_price)
 
 def bs_delta_call(S, K, T, r, sigma, q=0.0) :
-    d1, d2 = _d1_d2(S, K, T, r, sigma, q)
+    d1, _ = _d1_d2(S, K, T, r, sigma, q)
     delta_call = np.exp(-q*T)*norm.cdf(d1)
     return (delta_call)
 
 def bs_delta_put(S, K, T, r, sigma, q=0.0) :
-    d1, d2 = _d1_d2(S, K, T, r, sigma, q)
+    d1, _ = _d1_d2(S, K, T, r, sigma, q)
     delta_put = -np.exp(-q*T) * norm.cdf(-d1)
     return (delta_put)
 
 def bs_gamma (S, K, T, r, sigma, q=0.0) :
-    d1, d2 = _d1_d2(S, K, T, r, sigma, q)
+    d1, _ = _d1_d2(S, K, T, r, sigma, q)
     gamma = np.exp(-q*T) * norm.pdf(d1) / (S*sigma*np.sqrt(T))
     return (gamma)
 
 def bs_vega (S, K, T, r, sigma, q=0.0) :
-    d1, d2 = _d1_d2(S, K, T, r, sigma, q)
+    d1, _ = _d1_d2(S, K, T, r, sigma, q)
     vega = S*np.exp(-q*T)*norm.pdf(d1)*np.sqrt(T)
     return(vega)
 
 def bs_rho_call (S, K, T, r, sigma, q=0.0) :
-    d1, d2 = _d1_d2(S, K, T, r, sigma, q)
+    _, d2 = _d1_d2(S, K, T, r, sigma, q)
     rho_call = K*T*np.exp(-r*T)*norm.cdf(d2)
     return(rho_call)
 
 def bs_rho_put (S, K, T, r, sigma, q=0.0) :
-    d1, d2 = _d1_d2(S, K, T, r, sigma, q)
+    _, d2 = _d1_d2(S, K, T, r, sigma, q)
     rho_put = -K*T*np.exp(-r*T)*norm.cdf(-d2)
     return (rho_put)
 
