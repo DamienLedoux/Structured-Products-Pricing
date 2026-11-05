@@ -9,7 +9,7 @@ from scipy.stats import norm
 # sigma = volatility
 # q = dividends
 
-# norm.cdf = F(x) = fonction de réparttion loi normale
+# norm.cdf = F(x) = fonction de répartition loi normale
 # norm.pdf = phi = densité loi normale
 
 def _d1_d2(S, K, T, r, sigma, q):

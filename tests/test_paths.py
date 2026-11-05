@@ -46,8 +46,8 @@ def test_shape(n_steps, n_paths):
 @pytest.mark.parametrize("n_steps, n_paths", SHAPES)
 def test_initial_value(n_steps, n_paths):
     S = ps.simulate_gbm_paths(**BASE, T=1, sigma=0.2, n_steps=n_steps, n_paths=n_paths, seed=SEED)
-    # column 0 is exactly S0 by construction: strict comparison
-    assert np.allclose(S[:, 0], 100)
+    # column 0 = exp(log(S0)) : equal to S0 up to floating point rounding
+    assert np.allclose(S[:, 0], BASE["S0"])
 
 
 def test_reprod():
@@ -64,11 +64,46 @@ def test_positive(sigma, T):
     assert np.all(S > 0)
 
 
-def test_invalid_n_paths():
+@pytest.mark.parametrize("bad_n_paths", [0, -1, -100])
+def test_invalid_n_paths(bad_n_paths):
     with pytest.raises(ValueError, match="n_paths"):
-        ps.simulate_gbm_paths(**BASE, T=1, sigma=0.2, n_steps=7, n_paths=0, seed=SEED)
+        ps.simulate_gbm_paths(**BASE, T=1, sigma=0.2, n_steps=7, n_paths=bad_n_paths, seed=SEED)
 
-
-def test_invalid_n_steps():
+@pytest.mark.parametrize("bad_n_steps", [0, -1, -5])
+def test_invalid_n_steps(bad_n_steps):
     with pytest.raises(ValueError, match="n_steps"):
-        ps.simulate_gbm_paths(**BASE, T=1, sigma=0.2, n_steps=0, n_paths=100, seed=SEED)
+        ps.simulate_gbm_paths(**BASE, T=1, sigma=0.2, n_steps=bad_n_steps, n_paths=100, seed=SEED)
+
+@pytest.mark.parametrize("S0, T, mu, sigma, n_steps, q", PARAMS)
+def test_ST_mean(S0, T, mu, sigma, n_steps, q) :
+
+    theoretical_ST_mean = S0 * np.exp((mu-q)*T)
+
+    S = ps.simulate_gbm_paths(S0=S0, T=T, mu=mu, sigma=sigma, n_steps=n_steps, n_paths=N_PATHS, q=q, seed=SEED)
+    empirical_ST_mean = S[:, -1].mean()
+
+    std = S[:, -1].std(ddof=1)
+    se = std / np.sqrt(N_PATHS)
+
+    assert abs(empirical_ST_mean - theoretical_ST_mean) < 3*se
+
+@pytest.mark.parametrize("S0, T, mu, sigma, n_steps, q", PARAMS)
+def test_logreturn_mean(S0, T, mu, sigma, n_steps, q) : # logreturn = x
+
+    S = ps.simulate_gbm_paths(S0=S0, T=T, mu=mu, sigma=sigma, n_steps=n_steps, n_paths=N_PATHS, q=q, seed=SEED)
+    x = np.log(S[:, -1]/S0)
+    
+    theoretical_x_mean = (mu-q-sigma**2/2)*T
+
+    se = x.std(ddof=1)/np.sqrt(N_PATHS)
+
+    assert abs(x.mean() - theoretical_x_mean) < 3*se
+
+@pytest.mark.parametrize("S0, T, mu, sigma, n_steps, q", PARAMS)
+def test_logreturn_var(S0, T, mu, sigma, n_steps, q) : # logreturn = x
+
+    S = ps.simulate_gbm_paths(S0=S0, T=T, mu=mu, sigma=sigma, n_steps=n_steps, n_paths=N_PATHS, q=q, seed=SEED)
+    x = np.log(S[:, -1]/S0)
+    
+    assert x.var(ddof=1) == pytest.approx((sigma**2)*T, rel=0.02)
+    
