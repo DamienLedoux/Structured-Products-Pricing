@@ -13,7 +13,7 @@ def simulate_gbm_paths(S0, T, mu, sigma, n_steps, n_paths, q=0.0, seed=None):
     Z = rng.standard_normal(size=(n_paths,n_steps))
 
     log_increments = (mu-q-(sigma**2)/2)*dt + sigma*np.sqrt(dt)*Z # (n_paths, n_steps)
-    
+
     zero_col = np.zeros((n_paths, 1))
     log_increments = np.concatenate([zero_col, log_increments], axis=1)  # (n_paths, n_steps+1)
 
