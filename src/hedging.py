@@ -26,7 +26,7 @@ def delta_hedge_pnl(S, K, T, r, sigma_impl, c=0.0, q=0.0) :
     
     n_paths, n_cols = S.shape
     if n_cols < 2 :
-            raise ValueError(f"S must have >=2 columns. number of columns of S :{n_cols}")
+        raise ValueError(f"S must have >= 2 columns. number of columns of S :{n_cols}")
 
     n_steps = n_cols - 1
     dt = T / n_steps
