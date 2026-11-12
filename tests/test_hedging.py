@@ -8,6 +8,7 @@ SEED = 42
 N_PATHS = 200_000
 N_PATHS_SMALL = 5 # for when not a lot of paths are needed
 N_STEPS_DAILY = 252 # number of trading days in a year
+SOME_N_STEPS = [25, 50, 100, 200, 400] # several number of steps for last test (or when needed)
 
 # base parameters shared by all hedging tests
 # mu = R everywhere (risk-neutral drift): the discounted hedging portfolio is then a
@@ -50,7 +51,7 @@ def test_invalid_n_cols():
     with pytest.raises(ValueError, match="must have >= 2 columns"):
         hg.delta_hedge_pnl(S, K, T, R, sigma_impl=SIGMA, c=0.0, q=0.0)
 
-
+# Utility function
 def _simulate_replication(n_steps=252, n_paths=N_PATHS // 4):
     """Simulate paths once and return the discounted P&L of the delta hedge."""
     # mu = R: see top of file
@@ -92,8 +93,8 @@ def test_transaction_cost():
     pnl_0 = hg.delta_hedge_pnl(S, K, T, R, sigma_impl=SIGMA)
     pnl_c = hg.delta_hedge_pnl(S, K, T, R, sigma_impl=SIGMA, c=c)
 
-    deltas = np.zeros((n_paths, n_steps)) 
-    for k in range (n_steps):
+    deltas = np.zeros((n_paths, n_steps))
+    for k in range(n_steps):
         delta_k = bs.bs_delta_call(S=S[:, k], K=K, T=T-k*dt, r=R, sigma=SIGMA, q=0.0)
         deltas[:, k] = delta_k
 
@@ -124,3 +125,15 @@ def test_volatility(sigma_real, sign):
 
     # sign * mean > 3 se  <=>  mean > 3 se if sign = +1,  mean < -3 se if sign = -1
     assert pnl_disc.mean() * sign > 3*se, f"mean = {pnl_disc.mean():.3f}"
+
+def test_slope():
+    several_n_steps = SOME_N_STEPS
+    stds = np.zeros(len(several_n_steps))
+
+    for i, n_steps in enumerate(several_n_steps) :
+        pnl_disc = _simulate_replication(n_steps=n_steps, n_paths=10_000)
+        stds[i] = pnl_disc.std(ddof=1)
+    
+    slope, _ = np.polyfit(np.log(several_n_steps), np.log(stds), 1)
+
+    assert slope == pytest.approx(-0.5, abs=0.05), f"slope measured is not close to theory (-0.5). slope measured : {slope:.3f}"
