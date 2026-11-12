@@ -4,6 +4,8 @@ import black_scholes as bs
 
 def delta_hedge_pnl(S, K, T, r, sigma_impl, c=0.0, q=0.0) :
     """Final P&L of a short call hedged in delta at each grid date.
+    Transaction cost is charged on rebalancing trades only 
+    (not on the initial purchase nor the final liquidation).
 
     Parameters
     ----------
