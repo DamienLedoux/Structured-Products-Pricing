@@ -7,8 +7,12 @@ import hedging as hg
 SEED = 42
 N_PATHS = 200_000
 N_PATHS_SMALL = 5 # for when not a lot of paths are needed
+N_STEPS_DAILY = 252 # number of trading days in a year
 
 # base parameters shared by all hedging tests
+# mu = R everywhere (risk-neutral drift): the discounted hedging portfolio is then a
+# martingale, so the mean of the discounted P&L only depends on what is being tested
+# (e.g. the gap between real and implied vol), not on the stock drift.
 R = 0.05
 T = 1.0
 K = 100
@@ -17,6 +21,7 @@ S0 = 100
 
 
 def test_pnl_shape():
+    # mu = R: see top of file
     S = ps.simulate_gbm_paths(S0=S0, T=T, mu=R, sigma=SIGMA, n_steps=12, n_paths=100, seed=SEED)
     pnl = hg.delta_hedge_pnl(S, K, T, R, sigma_impl=SIGMA)
     assert pnl.shape == (100,)
@@ -34,6 +39,7 @@ def test_flat_path_one_step():
 
 
 def test_invalid_q():
+    # mu = R: see top of file
     S = ps.simulate_gbm_paths(S0=S0, T=T, mu=R, sigma=SIGMA, n_steps=12, n_paths=100, seed=SEED)
     with pytest.raises(ValueError, match="q must be 0"):
         hg.delta_hedge_pnl(S, K, T, R, sigma_impl=SIGMA, c=0.0, q=0.01)
@@ -47,6 +53,7 @@ def test_invalid_n_cols():
 
 def _simulate_replication(n_steps=252, n_paths=N_PATHS // 4):
     """Simulate paths once and return the discounted P&L of the delta hedge."""
+    # mu = R: see top of file
     S = ps.simulate_gbm_paths(S0=S0, T=T, mu=R, sigma=SIGMA, n_steps=n_steps, n_paths=n_paths, seed=SEED)
     pnl = hg.delta_hedge_pnl(S, K, T, R, sigma_impl=SIGMA)
     return pnl * np.exp(-R * T)         # discounted P&L
@@ -61,7 +68,7 @@ def test_replication_mean():
 
 
 def test_replication_std():
-    n_steps = 252
+    n_steps = N_STEPS_DAILY
     pnl_disc = _simulate_replication(n_steps=n_steps)
 
     # asymptotic std of the discrete-rebalancing hedging error:
@@ -79,6 +86,7 @@ def test_transaction_cost():
     dt = T / n_steps
     c = 0.01
     n_paths = N_PATHS_SMALL
+    # mu = R: see top of file
     S = ps.simulate_gbm_paths(S0=S0, T=T, mu=R, sigma=SIGMA, n_steps=n_steps, n_paths=n_paths, seed=SEED)
 
     pnl_0 = hg.delta_hedge_pnl(S, K, T, R, sigma_impl=SIGMA)
@@ -95,3 +103,24 @@ def test_transaction_cost():
 
     assert pnl_0 - pnl_c == pytest.approx(cost), "pnl_0 - pnl_c was not close to its theoretical value"
     assert np.all(pnl_c < pnl_0), "pnl_c (w transac. cost) was not less than pnl_0 (w/o transac cost)"
+
+@pytest.mark.parametrize("sigma_real, sign", [(0.15, +1), (0.25, -1)])
+def test_volatility(sigma_real, sign):
+    # Seller hedges with sigma_impl = SIGMA but the stock really moves with sigma_real.
+    # sigma_real < SIGMA: option sold too expensive -> seller wins  (sign = +1)
+    # sigma_real > SIGMA: option sold too cheap     -> seller loses (sign = -1)
+    n_steps = N_STEPS_DAILY
+    n_paths = N_PATHS // 4
+
+    # mu = R: see top of file
+    S = ps.simulate_gbm_paths(S0=S0, T=T, mu=R, sigma=sigma_real, n_steps=n_steps, n_paths=n_paths, seed=SEED)
+
+    # premium and delta are computed with the implied vol (SIGMA), not the real one
+    pnl = hg.delta_hedge_pnl(S, K, T, R, sigma_impl=SIGMA)
+
+    # discount the P&L and compute se
+    pnl_disc = pnl * np.exp(-R * T)
+    se = pnl_disc.std(ddof=1) / np.sqrt(len(pnl_disc))
+
+    # sign * mean > 3 se  <=>  mean > 3 se if sign = +1,  mean < -3 se if sign = -1
+    assert pnl_disc.mean() * sign > 3*se, f"mean = {pnl_disc.mean():.3f}"
