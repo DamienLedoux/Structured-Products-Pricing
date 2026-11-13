@@ -59,14 +59,12 @@ def _simulate_replication(n_steps=252, n_paths=N_PATHS // 4):
     pnl = hg.delta_hedge_pnl(S, K, T, R, sigma_impl=SIGMA)
     return pnl * np.exp(-R * T)         # discounted P&L
 
-
 def test_replication_mean():
     pnl_disc = _simulate_replication()
 
     # self-financing + correct premium => E[discounted P&L] = 0
     se = pnl_disc.std(ddof=1) / np.sqrt(len(pnl_disc))
     assert abs(pnl_disc.mean()) < 3 * se, "mean of discounted P&L not 0"
-
 
 def test_replication_std():
     n_steps = N_STEPS_DAILY
@@ -81,6 +79,7 @@ def test_replication_std():
     std_obs = pnl_disc.std(ddof=1)
     assert std_obs == pytest.approx(std_theory, rel=0.10), \
         f"std of discounted P&L = {std_obs:.3f}, theory = {std_theory:.3f}"
+
 
 def test_transaction_cost():
     n_steps = 5
@@ -105,6 +104,7 @@ def test_transaction_cost():
     assert pnl_0 - pnl_c == pytest.approx(cost), "pnl_0 - pnl_c was not close to its theoretical value"
     assert np.all(pnl_c < pnl_0), "pnl_c (w transac. cost) was not less than pnl_0 (w/o transac cost)"
 
+
 @pytest.mark.parametrize("sigma_real, sign", [(0.15, +1), (0.25, -1)])
 def test_volatility(sigma_real, sign):
     # Seller hedges with sigma_impl = SIGMA but the stock really moves with sigma_real.
@@ -125,6 +125,7 @@ def test_volatility(sigma_real, sign):
 
     # sign * mean > 3 se  <=>  mean > 3 se if sign = +1,  mean < -3 se if sign = -1
     assert pnl_disc.mean() * sign > 3*se, f"mean = {pnl_disc.mean():.3f}"
+
 
 def test_slope():
     several_n_steps = SOME_N_STEPS
